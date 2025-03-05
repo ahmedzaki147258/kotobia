@@ -14,7 +14,8 @@ export const createOrder = async (order) => {
 }
 
 export const getById = async (Id) => {
-    return await Order.find({ _id: Id });
+    return await Order.find({ _id: Id }).populate("user", "name")
+        .populate("books.book", "title");
 
 }
 
@@ -23,7 +24,7 @@ export const updateOrder = async (data, id) => {
         const validatedData = updateOrderValidator.parse(data);
         const totalPrice = validatedData.books.reduce((total, book) => total + book.price * book.quantity, 0);
         validatedData.totalPrice = totalPrice;
-        return await Order.findByIdAndUpdate(id, validatedData, { new: true });
+        return await Order.findByIdAndUpdate(id, validatedData, { new: true, runValidators: true });
     } catch (err) {
         throw err;
     }
