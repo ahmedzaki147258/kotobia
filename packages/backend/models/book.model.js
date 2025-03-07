@@ -18,7 +18,8 @@ const bookSchema = new mongoose.Schema({
   },
   price: {
     type: Number,
-    required: true
+    required: true,
+    min: [0, "price can't be lower than 0"]
   },
   description: {
     type: String,
@@ -27,7 +28,7 @@ const bookSchema = new mongoose.Schema({
   stock: {
     type: Number,
     required: true,
-    min: 0
+    min: [0, "stock can't be lower than 0"]
   },
   image: {
     type: String,
@@ -47,7 +48,7 @@ const bookSchema = new mongoose.Schema({
 
 bookSchema.set('toJSON', {
   transform: (doc, {_id, title, author, price, description, stock, image, deletedAt}) => ({_id, title, author, price, description, stock, image, deletedAt})
-});
+}); // DISPLAY THESE FIELDS ONLY
 
 const Book = mongoose.model('Book', bookSchema);
 export default Book;

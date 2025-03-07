@@ -1,3 +1,4 @@
+//@ts-check
 import Book from '../models/book.model.js';
 
 const addBook = async (formData) => {
@@ -11,26 +12,34 @@ const addBook = async (formData) => {
 };
 
 const listBooks = async() => {
-    const book = await Book.find({deletedAt: null}).exec();
-    // .exec() returns a promise
-    if(book.length === 0){
+    const books = await Book.find({deletedAt: null}).exec();
+    const bookCount = await Book.find({deletedAt: null}).countDocuments().exec();
+    // exec() --> the query will run even if await is NOT there (returns a promise)
+    // totalPages = totalBooks(bookCount) / booksPerPage(10)
+    // totalPages = Math.ceil(bookCount / 10)
+    const totalPages = Math.ceil(bookCount / 10);
+    if(books.length === 0){
       const err = new Error("No books found to list !");
+      // @ts-ignore
       err.status = 400;
       throw err;
     }
-    return book;
+    return {Total_Pages: totalPages, Books: books};
 }
 
 const filterBooks = async(rest,skip, limit,) => {
     const filter = { ...rest, deletedAt: null }; // to ensure that we get ONLY the books w/ deletedAt: null
     // as if I'm adding deletedAt: null in the params
-    const book = await Book.find(filter).skip(skip).limit(limit).exec();
-    if(book.length === 0){
+    const books = await Book.find(filter).skip(skip).limit(limit).exec();
+    const filteredBookCount = await Book.find(filter).skip(skip).limit(limit).countDocuments().exec();
+    const filterTotalPages = Math.ceil(filteredBookCount/10);
+    if(books.length === 0){
       const err = new Error("No books found to list !");
+      // @ts-ignore
       err.status = 400;
       throw err;
     }
-    return book;
+    return ({Total_Pages: filterTotalPages, Books: books});
 }
 
 const getBookByid = async(id) => {
@@ -38,6 +47,7 @@ const getBookByid = async(id) => {
     const bookByid = await Book.findOne({ _id: id, deletedAt:null}).exec();
     if(bookByid === null){
       const err = new Error("No books found to list !");
+      // @ts-ignore
       err.status = 400;
       throw err;
     }
@@ -57,24 +67,24 @@ const deleteBook = async(id) => { // shadow delete
     // check if the book is already deleted THEN --> No books found
     if(bookDeleted === null || bookDeleted.deletedAt != null){
       const err = new Error("No books found to delete !");
+      // @ts-ignore
       err.status = 400;
       throw err;
     }
     return "Book deleted successfully !";
 }
 
-const updateBookDetails = async(id, body) => {
-  const bookUpdated = await Book.findByIdAndUpdate(id,{$set:body},{new: true}).exec();
-  console.log("BODYYY: ",body);
-  console.log("UPDATEDDD: ", bookUpdated);
-  // IF THE ID IS UNAVAILABLE --> ID UNAVAILABLE - DONE
-  // SHOULD I disable modifying deletedAt ?????
-  // when adding a field that does NOT exist, it changes ONLY the ones existing - SHOULD I THROW AN ERR ?
+const updateBookDetails = async(id, rest) => {
+  const bookUpdated = await Book.findByIdAndUpdate(id,{$set:rest},{new: true, runValidators: true,}).exec();
   if(bookUpdated === null || bookUpdated.deletedAt != null){
     const err = new Error("No books found to update !");
+    // @ts-ignore
     err.status = 400;
     throw err;
   }
   return { message: "Book updated successfully!", bookUpdated };
 }
+
+
+
 export {addBook, updateBookImage, listBooks, filterBooks, getBookByid, deleteBook, updateBookDetails};
